@@ -9,9 +9,8 @@
 class Window
 {
   private:
-    GLFWwindow *w;
-
   public:
+    GLFWwindow *w;
     int32_t width, height;
     Window(int32_t width, int32_t height, const char *name);
     ~Window();
