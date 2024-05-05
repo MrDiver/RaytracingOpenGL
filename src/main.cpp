@@ -3,12 +3,9 @@
 #include <GLFW/glfw3.h>
 #include <cstdlib>
 #include <gl.h>
+#include <imgui.h>
 #include <spdlog/spdlog.h>
 #include <window.hpp>
-
-#include "backends/imgui_impl_glfw.h"
-#include "backends/imgui_impl_opengl3.h"
-#include "imgui.h"
 
 void error_callback(int32_t error, const char *description)
 {
@@ -29,16 +26,6 @@ int main()
     // Create a Window
     Window window(1280, 720, "Ray Tracer");
 
-    ImGui::CreateContext();
-
-    ImGuiIO &io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;     // IF using Docking Branch
-
-    ImGui_ImplGlfw_InitForOpenGL(window.w, true);
-    ImGui_ImplOpenGL3_Init();
-
     // Set callback
     window.setKeyCallback(key_callback);
 
@@ -50,20 +37,9 @@ int main()
         // START RENDERING
         window.startDrawing();
 
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-
-        ImGui::ShowDemoWindow();
-
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         window.endDrawing();
         // END RENDERING
     }
 
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
     return EXIT_SUCCESS;
 }
