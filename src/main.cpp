@@ -2,9 +2,9 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <cstdlib>
-#include <fstream>
 #include <gl.h>
 #include <spdlog/spdlog.h>
+#include <window.hpp>
 
 void error_callback(int32_t error, const char *description)
 {
@@ -22,47 +22,20 @@ int main()
     // Initialized GLFW
     glfwSetErrorCallback(error_callback);
 
-    if (glfwInit() != GLFW_TRUE)
-    {
-        spdlog::error("GLFW could not be initialized");
-        exit(EXIT_FAILURE);
-    }
-
     // Create a Window
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    GLFWwindow *window = glfwCreateWindow(1280, 720, "Ray Tracing", NULL, NULL);
-    if (!window)
-    {
-        spdlog::error("GLFW the window could not be created");
-        exit(EXIT_FAILURE);
-    }
-    glfwMakeContextCurrent(window);
-
-    // Loading glad
-    gladLoadGL(glfwGetProcAddress);
-
-    // Window Loop
-    int32_t width, height;
-    glfwSwapInterval(1);
+    Window window(1280, 720, "Ray Tracer");
 
     // Set callback
-    glfwSetKeyCallback(window, key_callback);
+    window.setKeyCallback(key_callback);
 
-    while (!glfwWindowShouldClose(window))
+    while (!window.shouldClose())
     {
         double time = glfwGetTime();
+        window.setClearColor(sin(time), -sin(time), 0, 1);
+        window.startDrawing();
 
-        glfwGetFramebufferSize(window, &width, &height);
-        glViewport(0, 0, width, height);
-        glClearColor(0.5f, 0.2f, 0.2f, 0.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        glfwPollEvents();
-        glfwSwapBuffers(window);
+        window.endDrawing();
     }
 
-    glfwDestroyWindow(window);
-    glfwTerminate();
     return EXIT_SUCCESS;
 }
