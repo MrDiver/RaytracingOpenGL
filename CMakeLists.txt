@@ -9,7 +9,9 @@ set(CMAKE_CXX_STANDARD 20)
 
 set(SOURCE_FILES
     "src/main.cpp"
-    "src/window.cpp")
+    "src/window.cpp"
+    "src/ezgl.cpp"
+)
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR})
@@ -55,3 +57,9 @@ target_include_directories(imgui PRIVATE "external/imgui")
 target_link_libraries(${PROJECT_NAME} imgui)
 #target_sources(${PROJECT_NAME} PRIVATE ${IMGUI_SOURCES} ${IMGUI_HEADERS})
 target_include_directories(${PROJECT_NAME} PRIVATE "external/imgui")
+
+
+# LINK GLM
+add_subdirectory("external/glm")
+target_link_libraries(${PROJECT_NAME} glm)
+target_include_directories(${PROJECT_NAME} PRIVATE glm)
