@@ -29,7 +29,7 @@ class VertexBuffer
 template <typename T> void VertexBuffer::setData(T *data, size_t count)
 {
     this->bind();
-    glBufferData(this->id, sizeof(T) * count, data, this->dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(T) * count, data, this->dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
 }
 
 class VertexArray
@@ -47,10 +47,10 @@ class VertexArray
 
 class Program
 {
-private:
+  private:
     GLint id;
 
-public:
+  public:
     Program(std::string vertex_path, std::string fragment_path);
     ~Program();
 

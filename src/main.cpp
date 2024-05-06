@@ -46,25 +46,26 @@ int main()
     // Set callback
     window.setKeyCallback(key_callback);
 
+    std::vector<Vertex> vertices = {
+        Vertex(glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)),   // top right
+        Vertex(glm::vec3(1.0f, -1.0f, 0.0f), glm::vec2(1.0f, 0.0f)),  // bottom right
+        Vertex(glm::vec3(-1.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)),  // top left
+        Vertex(glm::vec3(1.0f, -1.0f, 0.0f), glm::vec2(1.0f, 0.0f)),  // bottom right
+        Vertex(glm::vec3(-1.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)),  // top left
+        Vertex(glm::vec3(-1.0f, -1.0f, 0.0f), glm::vec2(0.0f, 0.0f)), // top right
+    };
+
+    ez::VertexBuffer quad_vbo;
+    quad_vbo.setData(vertices.data(), vertices.size());
+
+    ez::VertexArray vao;
+    quad_vbo.bind();
+    vao.attributes({
+        {GL_FLOAT, 3},
+        {GL_FLOAT, 2}
+    });
 
     ez::Program quad_program("shaders/quad.vsh", "shaders/quad.fsh");
-
-    // GLuint tex;
-    // size_t width = 100, height = 100;
-    // uint8_t data[width * height * 3];
-    // for (size_t y = 0; y < height; y++)
-    // {
-    //     for (size_t x = 0; x < width; x++)
-    //     {
-    //         data[y * width + x + 0] = 0;
-    //         data[y * width + x + 1] = 0;
-    //         data[y * width + x + 2] = 0;
-    //     }
-    // }
-    // glGenTextures(1, &tex);
-    // glBindTexture(GL_TEXTURE_2D, tex);
-    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
-    // GL_UNSIGNED_BYTE, data); glGenerateMipmap(GL_TEXTURE_2D);
 
     while (!window.shouldClose())
     {
@@ -73,25 +74,10 @@ int main()
 
         // START RENDERING
         window.startDrawing();
-        std::vector<float> vertices = {
-            0.5f,  0.5f, 0.0f,  // top right
-            0.5f, -0.5f, 0.0f,  // bottom right
-            -0.5f,  0.5f, 0.0f,  // top left 
-        };
-
-        ez::VertexBuffer quad_vbo;
-        quad_vbo.setData(vertices.data(), vertices.size());
-
-        ez::VertexArray vao;
-        quad_vbo.bind();
-        vao.attributes({
-            {GL_FLOAT, 3},
-        });
 
         quad_program.use();
         vao.bind();
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-
+        glDrawArrays(GL_TRIANGLES, 0, 6);
         window.endDrawing();
         // END RENDERING
     }
