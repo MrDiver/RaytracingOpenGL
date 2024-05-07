@@ -1,3 +1,4 @@
+#include "spdlog/common.h"
 #define GLAD_GL_IMPLEMENTATION
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -37,22 +38,23 @@ struct Vertex
 
 int main()
 {
+    // spdlog::set_level(spdlog::level::debug);
     // Initialized GLFW
     glfwSetErrorCallback(error_callback);
 
     // Create a Window
-    Window window(1280, 720, "Ray Tracer");
+    Window window(800, 400, "Ray Tracer");
 
     // Set callback
     window.setKeyCallback(key_callback);
 
     std::vector<Vertex> vertices = {
-        Vertex(glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)),   // top right
-        Vertex(glm::vec3(1.0f, -1.0f, 0.0f), glm::vec2(1.0f, 0.0f)),  // bottom right
-        Vertex(glm::vec3(-1.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)),  // top left
-        Vertex(glm::vec3(1.0f, -1.0f, 0.0f), glm::vec2(1.0f, 0.0f)),  // bottom right
-        Vertex(glm::vec3(-1.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)),  // top left
-        Vertex(glm::vec3(-1.0f, -1.0f, 0.0f), glm::vec2(0.0f, 0.0f)), // top right
+        Vertex(glm::vec3(1.0f, -1.0f, 0.0f), glm::vec2(1.0f, 1.0f)),  // top right
+        Vertex(glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f)),   // bottom right
+        Vertex(glm::vec3(-1.0f, -1.0f, 0.0f), glm::vec2(0.0f, 1.0f)), // top left
+        Vertex(glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f)),   // bottom right
+        Vertex(glm::vec3(-1.0f, -1.0f, 0.0f), glm::vec2(0.0f, 1.0f)), // top left
+        Vertex(glm::vec3(-1.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f)),  // top right
     };
 
     ez::VertexBuffer quad_vbo;
@@ -67,6 +69,11 @@ int main()
 
     ez::Program quad_program("shaders/quad.vsh", "shaders/quad.fsh");
 
+    // ImGui Variables
+    float viewport_size = 2.0;
+    float focal_length = 1.0;
+    float camera_z = 1.0;
+
     while (!window.shouldClose())
     {
         double time = glfwGetTime();
@@ -76,8 +83,21 @@ int main()
         window.startDrawing();
 
         quad_program.use();
+        quad_program.setFloat("window_width", window.width);
+        quad_program.setFloat("window_height", window.height);
+        quad_program.setFloat("viewport_height", viewport_size);
+        quad_program.setFloat("focal_length", focal_length);
+        quad_program.setFloat("camera_z", camera_z);
+
         vao.bind();
         glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        ImGui::Begin("<3");
+        ImGui::SliderFloat("Viewport Size", &viewport_size, 1.0, 10.0);
+        ImGui::SliderFloat("Focal Length", &focal_length, 1.0, 50.0);
+        ImGui::SliderFloat("Camera Z", &camera_z, 0.0, 50.0);
+        ImGui::End();
+
         window.endDrawing();
         // END RENDERING
     }

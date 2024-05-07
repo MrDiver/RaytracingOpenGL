@@ -3,9 +3,11 @@
 #include <cstddef>
 #include <cstdlib>
 #include <initializer_list>
+#include <string_view>
 #include <utility>
 #define GLAD_GL_IMPLEMENTATION
 #include <gl.h>
+#include <glm/glm.hpp>
 
 namespace ez
 {
@@ -51,10 +53,17 @@ class Program
     GLint id;
 
   public:
-    Program(std::string vertex_path, std::string fragment_path);
+    Program(std::string const &vertex_path, std::string const &fragment_path);
     ~Program();
 
     void use();
+    void setFloat(std::string const &name, float value);
+    void setVec2(std::string const &name, glm::vec2 const &value);
+    void setVec2(std::string const &name, float v1, float v2);
+    void setVec3(std::string const &name, glm::vec3 const &value);
+    void setVec3(std::string const &name, float v1, float v2, float v3);
+    void setVec4(std::string const &name, glm::vec4 const &value);
+    void setVec4(std::string const &name, float v1, float v2, float v3, float v4);
 };
 
 } // namespace ez

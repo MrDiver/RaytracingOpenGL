@@ -1,5 +1,11 @@
 #include "ezgl.hpp"
+#include <cstdlib>
+#include <filesystem>
 #include <fstream>
+#include <string>
+#include <string_view>
+
+namespace fs = std::filesystem;
 
 namespace ez
 {
@@ -77,8 +83,8 @@ void VertexArray::attributes(std::initializer_list<std::pair<GLenum, GLint>> ele
         glVertexAttribPointer(counter, p.second, p.first, GL_FALSE, stride, (GLvoid *)offset);
         glEnableVertexAttribArray(counter);
 
-        spdlog::info("Attr: {} size: {} type: {} stride: {} offset: {}", counter, p.second, p.first, stride,
-        offset);
+        spdlog::debug("VAO {}: Attr: {} size: {} type: {} stride: {} offset: {}", this->id, counter, p.second, p.first,
+                      stride, offset);
 
         offset += size;
         counter++;
@@ -87,43 +93,74 @@ void VertexArray::attributes(std::initializer_list<std::pair<GLenum, GLint>> ele
 
 /* Program */
 
-auto read_file(std::string_view path) -> std::string {
-    constexpr auto read_size = std::size_t(4096);
-    auto stream = std::ifstream(path.data());
+std::string read_file(std::string_view path)
+{
+    spdlog::debug("Reading file {}", path.data());
+    std::ifstream stream(path.data());
     stream.exceptions(std::ios_base::badbit);
 
-    if (not stream) {
-        throw std::ios_base::failure("file does not exist");
+    if (not stream)
+    {
+        spdlog::error("File {} does not exist", path);
+        exit(EXIT_FAILURE);
     }
-    
-    auto out = std::string();
-    auto buf = std::string(read_size, '\0');
-    while (stream.read(& buf[0], read_size)) {
-        out.append(buf, 0, stream.gcount());
+
+    fs::path p(path);
+    p = p.remove_filename();
+
+    std::string content;
+    std::string line;
+    if (stream.is_open())
+    {
+        while (std::getline(stream, line))
+        {
+            if (line.starts_with("#include"))
+            {
+                size_t start = line.find("\"");
+                size_t end = line.find("\"", start + 1);
+                std::string sub(line.begin() + start + 1, line.begin() + end);
+                spdlog::debug("Found include with name {} attempting read", p.string() + sub);
+                std::string subfile = read_file(p.string() + sub);
+                content += "// === START INCLUDE " + sub + " ===\n";
+                content += subfile;
+                content += "// === END INCLUDE " + sub + " ===\n";
+            }
+            else
+            {
+                content += line + "\n";
+            }
+        }
+        stream.close();
     }
-    out.append(buf, 0, stream.gcount());
-    return out;
+    else
+    {
+        spdlog::error("Unable to open file {}", path.data());
+    }
+    spdlog::debug("{}", content);
+
+    return content;
 }
 
-Program::Program(std::string vertexPath, std::string fragmentPath){
+Program::Program(std::string const &vertexPath, std::string const &fragmentPath)
+{
     std::string vertexSource = read_file(vertexPath);
     std::string fragmentSource = read_file(fragmentPath);
     GLint vertShader, fragShader;
     vertShader = glCreateShader(GL_VERTEX_SHADER);
     fragShader = glCreateShader(GL_FRAGMENT_SHADER);
 
-    int  success;
+    int success;
     char infoLog[512];
 
-    const char* tmp = vertexSource.c_str();
+    const char *tmp = vertexSource.c_str();
     glShaderSource(vertShader, 1, &tmp, NULL);
     glCompileShader(vertShader);
     glGetShaderiv(vertShader, GL_COMPILE_STATUS, &success);
 
-    if(!success)
+    if (!success)
     {
         glGetShaderInfoLog(vertShader, 512, NULL, infoLog);
-        spdlog::error("VertexShader compilation failed \n{}",infoLog);
+        spdlog::error("VertexShader compilation failed \n{}", infoLog);
         exit(EXIT_FAILURE);
     }
 
@@ -132,34 +169,65 @@ Program::Program(std::string vertexPath, std::string fragmentPath){
     glCompileShader(fragShader);
     glGetShaderiv(fragShader, GL_COMPILE_STATUS, &success);
 
-    if(!success)
+    if (!success)
     {
         glGetShaderInfoLog(fragShader, 512, NULL, infoLog);
         spdlog::error("FragmentShader compilation failed \n{}", infoLog);
         exit(EXIT_FAILURE);
     }
-    
+
     this->id = glCreateProgram();
     glAttachShader(this->id, vertShader);
     glAttachShader(this->id, fragShader);
     glLinkProgram(this->id);
 
     glGetProgramiv(this->id, GL_LINK_STATUS, &success);
-    if(!success) {
+    if (!success)
+    {
         glGetProgramInfoLog(this->id, 512, NULL, infoLog);
         spdlog::error("Linking Program failed \n{}", infoLog);
         exit(EXIT_FAILURE);
     }
     glDeleteShader(vertShader);
-    glDeleteShader(fragShader);  
+    glDeleteShader(fragShader);
 }
 
-Program::~Program(){
+Program::~Program()
+{
     glDeleteProgram(this->id);
 }
 
-void Program::use(){
+void Program::use()
+{
     glUseProgram(this->id);
 }
 
+void Program::setFloat(std::string const &name, float value)
+{
+    glUniform1f(glGetUniformLocation(this->id, name.c_str()), value);
+}
+void Program::setVec2(std::string const &name, glm::vec2 const &value)
+{
+    glUniform2f(glGetUniformLocation(this->id, name.c_str()), value.x, value.y);
+}
+void Program::setVec2(std::string const &name, float v1, float v2)
+{
+    glUniform2f(glGetUniformLocation(this->id, name.c_str()), v1, v2);
+}
+void Program::setVec3(std::string const &name, glm::vec3 const &value)
+{
+    glUniform3f(glGetUniformLocation(this->id, name.c_str()), value.x, value.y, value.z);
+}
+void Program::setVec3(std::string const &name, float v1, float v2, float v3)
+{
+    glUniform3f(glGetUniformLocation(this->id, name.c_str()), v1, v2, v3);
+}
+void Program::setVec4(std::string const &name, glm::vec4 const &value)
+{
+    glUniform4f(glGetUniformLocation(this->id, name.c_str()), value.x, value.y, value.z, value.w);
+}
+void Program::setVec4(std::string const &name, float v1, float v2, float v3, float v4)
+{
+    glUniform4f(glGetUniformLocation(this->id, name.c_str()), v1, v2, v3, v4);
+}
 } // namespace ez

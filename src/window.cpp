@@ -17,7 +17,7 @@ Window::Window(int32_t width, int32_t height, const char *name)
     // Create a Window
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    this->w = glfwCreateWindow(1280, 720, "Ray Tracing", NULL, NULL);
+    this->w = glfwCreateWindow(width, height, "Ray Tracing", NULL, NULL);
     if (!this->w)
     {
         spdlog::error("GLFW the window could not be created");
