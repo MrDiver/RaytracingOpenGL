@@ -43,7 +43,7 @@ int main()
     glfwSetErrorCallback(error_callback);
 
     // Create a Window
-    Window window(800, 400, "Ray Tracer");
+    Window window(1280, 720, "Ray Tracer");
 
     // Set callback
     window.setKeyCallback(key_callback);
@@ -73,6 +73,7 @@ int main()
     float viewport_size = 2.0;
     float focal_length = 1.0;
     float camera_z = 1.0;
+    float t_min = 0.1, t_max = 100.0;
     double lastTime = glfwGetTime();
 
     while (!window.shouldClose())
@@ -89,16 +90,20 @@ int main()
         quad_program.setFloat("viewport_height", viewport_size);
         quad_program.setFloat("focal_length", focal_length);
         quad_program.setFloat("camera_z", camera_z);
+        quad_program.setFloat("t_min", t_min);
+        quad_program.setFloat("t_max", t_max);
 
         vao.bind();
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
         ImGui::Begin("<3");
-        ImGui::Text("%f", glfwGetTime() - lastTime);
+        ImGui::Text("%f", 1 / (glfwGetTime() - lastTime));
         lastTime = glfwGetTime();
         ImGui::SliderFloat("Viewport Size", &viewport_size, 1.0, 10.0);
         ImGui::SliderFloat("Focal Length", &focal_length, 1.0, 50.0);
         ImGui::SliderFloat("Camera Z", &camera_z, 0.0, 50.0);
+        ImGui::SliderFloat("Min Clip", &t_min, 0.0, 10.0);
+        ImGui::SliderFloat("Max Clip", &t_max, 10.0, 100.0);
         ImGui::End();
 
         window.endDrawing();

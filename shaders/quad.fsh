@@ -22,49 +22,21 @@ vec3 viewport_v = vec3(0, -viewport_height, 0);
 vec3 viewport_uv = viewport_u + viewport_v;
 vec3 viewport_upleft = camera_center - vec3(0, 0, focal_length) - viewport_u / 2 - viewport_v / 2;
 
-float hitSphere(vec3 center, float radius, Ray ray)
-{
-    vec3 oc = center - ray.origin;
-    float a = 1 / dot(ray.direction, ray.direction);
-#ifdef USE_QUADRATIC_FORMULA
-    float b = -2.0 * dot(ray.direction, oc);
-    float c = dot(oc, oc) - radius * radius;
-    float discriminant = b * b - 4 * a * c;
-#else
-    // GPU friendly version of PQ formula
-    float p = -2 * dot(ray.direction, oc) * a;
-    float q = (dot(oc, oc) - radius) * a;
-    float discriminant = (p * p * 0.25) - q;
-#endif
-
-    if (discriminant <= 0)
-    {
-        return -1.0;
-    }
-
-#ifdef USE_QUADRATIC_FORMULA
-    return (-b - sqrt(discriminant)) / (2.0 * a);
-#else
-    return -p * 0.5 - sqrt(discriminant);
-#endif
-}
-
-vec3 sphereNormal(vec3 center, float t, Ray ray)
-{
-    return normalize(rayAt(ray, t) - center);
-}
-
 vec3 rayColor(Ray ray)
 {
-    float s1 = hitSphere(vec3(0, 0, -1), 0.5, ray);
-    if (s1 > 0.0)
+    HitInfo hitinfo;
+    Sphere sphere = Sphere(vec3(0, 0, -1), 0.5);
+    bool isHit = hit(sphere, ray, hitinfo);
+    if (isHit)
     {
-        return (sphereNormal(vec3(0, 0, -1), s1, ray) + vec3(1)) * 0.5;
-    }
-    float s2 = hitSphere(vec3(-2, 0, -2), 0.5, ray);
-    if (s2 > 0.0)
-    {
-        return (sphereNormal(vec3(-2, 0, -2), s2, ray) + 1) * 0.5;
+        if (hitinfo.front_face)
+        {
+            return vec3(1, 0, 0);
+        }
+        else
+        {
+            return vec3(0, 1, 0);
+        }
     }
     float a = 0.5 * (ray.direction.y + 1.0);
     return (1.0 - a) * vec3(1.0, 1.0, 1.0) + a * vec3(0.5, 0.7, 1.0);
