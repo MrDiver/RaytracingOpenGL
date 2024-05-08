@@ -1,4 +1,4 @@
-#version 330
+#version 430
 
 #include "common.glsl"
 
@@ -22,20 +22,30 @@ vec3 viewport_v = vec3(0, -viewport_height, 0);
 vec3 viewport_uv = viewport_u + viewport_v;
 vec3 viewport_upleft = camera_center - vec3(0, 0, focal_length) - viewport_u / 2 - viewport_v / 2;
 
+uniform int numSpheres = 0;
+
+layout(std430, binding = 3) buffer sphereBuffer
+{
+    Sphere spheres[];
+};
+
 vec3 rayColor(Ray ray)
 {
     HitInfo hitinfo;
-    Sphere sphere = Sphere(vec3(0, 0, -1), 0.5);
-    bool isHit = hit(sphere, ray, hitinfo);
-    if (isHit)
+    for (int i = 0; i < numSpheres; i++)
     {
-        if (hitinfo.front_face)
+        Sphere sphere = spheres[i];
+        bool isHit = hit(sphere, ray, hitinfo);
+        if (isHit)
         {
-            return vec3(1, 0, 0);
-        }
-        else
-        {
-            return vec3(0, 1, 0);
+            if (hitinfo.front_face)
+            {
+                return vec3(1, 0, 0);
+            }
+            else
+            {
+                return vec3(0, 1, 0);
+            }
         }
     }
     float a = 0.5 * (ray.direction.y + 1.0);

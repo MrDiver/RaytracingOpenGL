@@ -1,4 +1,5 @@
 #include "spdlog/common.h"
+#include <vector>
 #define GLAD_GL_IMPLEMENTATION
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -33,6 +34,18 @@ struct Vertex
     {
         this->pos = pos;
         this->uv = uv;
+    }
+};
+
+struct Sphere
+{
+    glm::vec3 origin;
+    float radius;
+
+    Sphere(glm::vec3 origin, float radius)
+    {
+        this->origin = origin;
+        this->radius = radius;
     }
 };
 
@@ -75,6 +88,11 @@ int main()
     float camera_z = 1.0;
     float t_min = 0.1, t_max = 100.0;
     double lastTime = glfwGetTime();
+    std::vector<Sphere> spheres;
+    spheres.push_back(Sphere(glm::vec3(0, 0, -1), 0.5));
+    spheres.push_back(Sphere(glm::vec3(-2, 0, -2), 0.3));
+    ez::SSBO sphereSSBO;
+    sphereSSBO.setData(spheres.data(), spheres.size());
 
     while (!window.shouldClose())
     {
@@ -92,7 +110,10 @@ int main()
         quad_program.setFloat("camera_z", camera_z);
         quad_program.setFloat("t_min", t_min);
         quad_program.setFloat("t_max", t_max);
+        quad_program.setInt("numSpheres", spheres.size());
 
+        sphereSSBO.bind();
+        sphereSSBO.layout(3);
         vao.bind();
         glDrawArrays(GL_TRIANGLES, 0, 6);
 

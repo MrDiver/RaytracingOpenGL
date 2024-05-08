@@ -26,7 +26,7 @@ Window::Window(int32_t width, int32_t height, const char *name)
     glfwMakeContextCurrent(this->w);
 
     // Loading glad
-    gladLoadGL(glfwGetProcAddress);
+    gladLoadGL();
     glfwSwapInterval(1);
     glClearColor(0.5f, 0.2f, 0.2f, 0.0f);
 

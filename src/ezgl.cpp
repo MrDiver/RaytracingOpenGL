@@ -202,6 +202,10 @@ void Program::use()
     glUseProgram(this->id);
 }
 
+void Program::setInt(std::string const &name, uint32_t value)
+{
+    glUniform1i(glGetUniformLocation(this->id, name.c_str()), value);
+}
 void Program::setFloat(std::string const &name, float value)
 {
     glUniform1f(glGetUniformLocation(this->id, name.c_str()), value);
@@ -229,5 +233,22 @@ void Program::setVec4(std::string const &name, glm::vec4 const &value)
 void Program::setVec4(std::string const &name, float v1, float v2, float v3, float v4)
 {
     glUniform4f(glGetUniformLocation(this->id, name.c_str()), v1, v2, v3, v4);
+}
+
+SSBO::SSBO()
+{
+    glGenBuffers(1, &this->id);
+}
+SSBO::~SSBO()
+{
+    glDeleteBuffers(1, &this->id);
+}
+void SSBO::bind()
+{
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, this->id);
+}
+void SSBO::layout(GLint binding)
+{
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, this->id);
 }
 } // namespace ez

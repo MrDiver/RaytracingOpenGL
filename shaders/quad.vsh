@@ -1,4 +1,4 @@
-#version 330
+#version 430
 
 in vec3 pos;
 in vec2 uv;
