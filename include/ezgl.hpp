@@ -79,6 +79,7 @@ class SSBO
     void bind();
     void layout(GLint binding);
     template <typename T> void setData(T *data, size_t count);
+    template <typename T> void setSubData(T *data, size_t start, size_t count);
 };
 template <typename T> void SSBO::setData(T *data, size_t count)
 {
@@ -92,6 +93,13 @@ template <typename T> void SSBO::setData(T *data, size_t count)
     {
         glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(T) * count, data);
     }
+}
+
+template <typename T> void SSBO::setSubData(T *data, size_t start, size_t count)
+{
+    this->bind();
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER, sizeof(T) * start, sizeof(T) * count, data + start);
+    spdlog::info("Sizeof Sphere {}", sizeof(T));
 }
 
 } // namespace ez

@@ -9,6 +9,7 @@ struct Ray{
 
 struct Sphere{
     vec3 origin;
+    vec3 color;
     float radius;
 };
 

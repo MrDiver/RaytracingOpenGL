@@ -32,21 +32,32 @@ layout(std430, binding = 3) buffer sphereBuffer
 vec3 rayColor(Ray ray)
 {
     HitInfo hitinfo;
+    float lastDistance = t_max;
+    bool foundSphere = false;
+    vec3 col;
     for (int i = 0; i < numSpheres; i++)
     {
         Sphere sphere = spheres[i];
         bool isHit = hit(sphere, ray, hitinfo);
         if (isHit)
         {
+            if (hitinfo.t > lastDistance){
+                continue;
+            }
+            foundSphere = true;
             if (hitinfo.front_face)
             {
-                return vec3(1, 0, 0);
+                col = sphere.color; // vec3(hitinfo.t)/t_max;
             }
             else
             {
-                return vec3(0, 1, 0);
+                col = vec3(1.0)-sphere.color;
             }
+            lastDistance = hitinfo.t;
         }
+    }
+    if(foundSphere){
+        return col;
     }
     float a = 0.5 * (ray.direction.y + 1.0);
     return (1.0 - a) * vec3(1.0, 1.0, 1.0) + a * vec3(0.5, 0.7, 1.0);

@@ -6,9 +6,14 @@
 #include <cstdlib>
 #include <gl.h>
 #include <glm/glm.hpp>
-#include <imgui.h>
 #include <spdlog/spdlog.h>
 #include <window.hpp>
+
+#ifndef IMGUI_DEFINE_MATH_OPERATORS
+#define IMGUI_DEFINE_MATH_OPERATORS
+#endif
+#include "imgui.h"
+#include "imgui_internal.h"
 
 #include "ezgl.hpp"
 
@@ -39,7 +44,8 @@ struct Vertex
 
 struct Sphere
 {
-    glm::vec3 origin;
+    alignas(16) glm::vec3 origin;
+    alignas(16) glm::vec3 color;
     float radius;
 
     Sphere(glm::vec3 origin, float radius)
@@ -48,6 +54,22 @@ struct Sphere
         this->radius = radius;
     }
 };
+
+void something()
+{
+    float width = ImGui::CalcItemWidth();
+    ImDrawList *drawList = ImGui::GetWindowDrawList();
+    ImGui::InvisibleButton("SLIPSLOP", ImVec2(width, width));
+
+    ImRect oRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
+    ImVec2 vSecurity(15.0f, 15.0f);
+    ImRect frame_bb = ImRect(oRect.Min - vSecurity, oRect.Max + vSecurity);
+    bool held;
+    bool hovered;
+    bool pressed = ImGui::ButtonBehavior(frame_bb, ImGui::GetID("##Zone"), &hovered, &held);
+    ImU32 const uFrameCol = ImGui::GetColorU32(ImGuiCol_FrameBg);
+    ImGui::RenderFrame(oRect.Min, oRect.Max, uFrameCol, true, 5.0f);
+}
 
 int main()
 {
@@ -91,6 +113,7 @@ int main()
     std::vector<Sphere> spheres;
     spheres.push_back(Sphere(glm::vec3(0, 0, -1), 0.5));
     spheres.push_back(Sphere(glm::vec3(-2, 0, -2), 0.3));
+    spheres.push_back(Sphere(glm::vec3(2, 0, -2), 0.3));
     ez::SSBO sphereSSBO;
     sphereSSBO.setData(spheres.data(), spheres.size());
 
@@ -118,6 +141,7 @@ int main()
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
         ImGui::Begin("<3");
+
         ImGui::Text("%f", 1 / (glfwGetTime() - lastTime));
         lastTime = glfwGetTime();
         ImGui::SliderFloat("Viewport Size", &viewport_size, 1.0, 10.0);
@@ -125,6 +149,21 @@ int main()
         ImGui::SliderFloat("Camera Z", &camera_z, 0.0, 50.0);
         ImGui::SliderFloat("Min Clip", &t_min, 0.0, 10.0);
         ImGui::SliderFloat("Max Clip", &t_max, 10.0, 100.0);
+        for (uint32_t i = 0; i < spheres.size(); i++)
+        {
+            ImGui::PushID(i);
+            if (ImGui::CollapsingHeader("Sphere"))
+            {
+                bool positionUpdated = ImGui::SliderFloat3("Position", &spheres[i].origin.x, -2, 2);
+                bool radiusUpdated = ImGui::SliderFloat("Radius", &spheres[i].radius, -2, 2);
+                bool colorUpdated = ImGui::ColorPicker3("Color", &spheres[i].color.x);
+                if (positionUpdated || colorUpdated || radiusUpdated)
+                {
+                    sphereSSBO.setSubData(spheres.data(), i, 1);
+                }
+            }
+            ImGui::PopID();
+        }
         ImGui::End();
 
         window.endDrawing();
