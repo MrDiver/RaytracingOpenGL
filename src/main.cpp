@@ -73,6 +73,7 @@ int main()
     float viewport_size = 2.0;
     float focal_length = 1.0;
     float camera_z = 1.0;
+    double lastTime = glfwGetTime();
 
     while (!window.shouldClose())
     {
@@ -93,6 +94,8 @@ int main()
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
         ImGui::Begin("<3");
+        ImGui::Text("%f", glfwGetTime() - lastTime);
+        lastTime = glfwGetTime();
         ImGui::SliderFloat("Viewport Size", &viewport_size, 1.0, 10.0);
         ImGui::SliderFloat("Focal Length", &focal_length, 1.0, 50.0);
         ImGui::SliderFloat("Camera Z", &camera_z, 0.0, 50.0);

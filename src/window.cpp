@@ -37,7 +37,7 @@ Window::Window(int32_t width, int32_t height, const char *name)
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;     // IF using Docking Branch
-    io.Fonts->AddFontFromFileTTF("/usr/share/fonts/TTF/LilexNerdFont-Regular.ttf", 20);
+    io.Fonts->AddFontFromFileTTF("/usr/share/fonts/TTF/LilexNerdFont-Regular.ttf", 18);
 
     ImGui_ImplGlfw_InitForOpenGL(this->w, true);
     ImGui_ImplOpenGL3_Init();
