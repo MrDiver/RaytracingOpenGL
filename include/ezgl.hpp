@@ -71,7 +71,6 @@ class SSBO
 {
   private:
     GLuint id;
-    bool initial_set = false;
 
   public:
     SSBO();
@@ -84,22 +83,13 @@ class SSBO
 template <typename T> void SSBO::setData(T *data, size_t count)
 {
     this->bind();
-    if (!this->initial_set)
-    {
-        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(T) * count, data, GL_DYNAMIC_COPY);
-        this->initial_set = true;
-    }
-    else
-    {
-        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(T) * count, data);
-    }
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(T) * count, data, GL_DYNAMIC_COPY);
 }
 
 template <typename T> void SSBO::setSubData(T *data, size_t start, size_t count)
 {
     this->bind();
     glBufferSubData(GL_SHADER_STORAGE_BUFFER, sizeof(T) * start, sizeof(T) * count, data + start);
-    spdlog::info("Sizeof Sphere {}", sizeof(T));
 }
 
 } // namespace ez

@@ -48,11 +48,22 @@ struct Sphere
     alignas(16) glm::vec3 color;
     float radius;
 
-    Sphere(glm::vec3 origin, float radius)
+    Sphere(glm::vec3 origin, float radius, glm::vec3 color = glm::vec3(0.7, 0.7, 0.7))
     {
         this->origin = origin;
         this->radius = radius;
+        this->color = color;
     }
+};
+
+struct GlobalData
+{
+    float viewport_size = 2.0;
+    float focal_length = 7.0;
+    float camera_z = 17.0;
+    float t_min = 0.1;
+    float t_max = 100.0;
+    std::vector<Sphere> spheres;
 };
 
 void something()
@@ -105,15 +116,12 @@ int main()
     ez::Program quad_program("shaders/quad.vsh", "shaders/quad.fsh");
 
     // ImGui Variables
-    float viewport_size = 2.0;
-    float focal_length = 1.0;
-    float camera_z = 1.0;
-    float t_min = 0.1, t_max = 100.0;
+    GlobalData globaldata;
     double lastTime = glfwGetTime();
     std::vector<Sphere> spheres;
-    spheres.push_back(Sphere(glm::vec3(0, 0, -1), 0.5));
-    spheres.push_back(Sphere(glm::vec3(-2, 0, -2), 0.3));
-    spheres.push_back(Sphere(glm::vec3(2, 0, -2), 0.3));
+    spheres.push_back(Sphere(glm::vec3(0, 0, 0), 0.5, glm::vec3(1, 0, 0)));
+    spheres.push_back(Sphere(glm::vec3(-2, 0, 0), 0.3, glm::vec3(0, 1, 0)));
+    spheres.push_back(Sphere(glm::vec3(2, 0, 0), 0.3, glm::vec3(0, 0, 1)));
     ez::SSBO sphereSSBO;
     sphereSSBO.setData(spheres.data(), spheres.size());
 
@@ -128,11 +136,11 @@ int main()
         quad_program.use();
         quad_program.setFloat("window_width", window.width);
         quad_program.setFloat("window_height", window.height);
-        quad_program.setFloat("viewport_height", viewport_size);
-        quad_program.setFloat("focal_length", focal_length);
-        quad_program.setFloat("camera_z", camera_z);
-        quad_program.setFloat("t_min", t_min);
-        quad_program.setFloat("t_max", t_max);
+        quad_program.setFloat("viewport_height", globaldata.viewport_size);
+        quad_program.setFloat("focal_length", globaldata.focal_length);
+        quad_program.setFloat("camera_z", globaldata.camera_z);
+        quad_program.setFloat("t_min", globaldata.t_min);
+        quad_program.setFloat("t_max", globaldata.t_max);
         quad_program.setInt("numSpheres", spheres.size());
 
         sphereSSBO.bind();
@@ -144,14 +152,26 @@ int main()
 
         ImGui::Text("%f", 1 / (glfwGetTime() - lastTime));
         lastTime = glfwGetTime();
-        ImGui::SliderFloat("Viewport Size", &viewport_size, 1.0, 10.0);
-        ImGui::SliderFloat("Focal Length", &focal_length, 1.0, 50.0);
-        ImGui::SliderFloat("Camera Z", &camera_z, 0.0, 50.0);
-        ImGui::SliderFloat("Min Clip", &t_min, 0.0, 10.0);
-        ImGui::SliderFloat("Max Clip", &t_max, 10.0, 100.0);
+        ImGui::SliderFloat("Viewport Size", &globaldata.viewport_size, 1.0, 10.0);
+        ImGui::SliderFloat("Focal Length", &globaldata.focal_length, 1.0, 50.0);
+        ImGui::SliderFloat("Camera Z", &globaldata.camera_z, 0.0, 50.0);
+        ImGui::SliderFloat("Min Clip", &globaldata.t_min, 0.0, 10.0);
+        ImGui::SliderFloat("Max Clip", &globaldata.t_max, 10.0, 100.0);
+        if (ImGui::Button("Add Sphere", ImVec2(30, 30)))
+        {
+            spheres.push_back(Sphere(glm::vec3(0, 0, 0), 1.0));
+            sphereSSBO.setData(spheres.data(), spheres.size());
+        }
+
         for (uint32_t i = 0; i < spheres.size(); i++)
         {
             ImGui::PushID(i);
+            if (ImGui::Button("Delete"))
+            {
+                spheres.erase(spheres.begin() + i);
+                sphereSSBO.setData(spheres.data(), spheres.size());
+            }
+            ImGui::SameLine();
             if (ImGui::CollapsingHeader("Sphere"))
             {
                 bool positionUpdated = ImGui::SliderFloat3("Position", &spheres[i].origin.x, -2, 2);
@@ -162,6 +182,7 @@ int main()
                     sphereSSBO.setSubData(spheres.data(), i, 1);
                 }
             }
+
             ImGui::PopID();
         }
         ImGui::End();
