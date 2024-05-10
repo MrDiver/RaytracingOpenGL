@@ -47,7 +47,7 @@ vec3 rayColor(Ray ray)
             foundSphere = true;
             if (hitinfo.front_face)
             {
-                col = sphere.color; // vec3(hitinfo.t)/t_max;
+                col = (hitinfo.normal+1)/2;
             }
             else
             {

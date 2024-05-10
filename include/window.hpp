@@ -16,6 +16,8 @@ class Window
     ~Window();
 
     void setKeyCallback(GLFWkeyfun callback);
+    void setScrollCallback(GLFWscrollfun callback);
+    void setUserPointer(void *pointer);
     void close();
     bool shouldClose();
     void startDrawing();

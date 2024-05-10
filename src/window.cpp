@@ -58,6 +58,16 @@ void Window::setKeyCallback(GLFWkeyfun callback)
     glfwSetKeyCallback(this->w, callback);
 }
 
+void Window::setScrollCallback(GLFWscrollfun callback)
+{
+    glfwSetScrollCallback(this->w, callback);
+}
+
+void Window::setUserPointer(void *pointer)
+{
+    glfwSetWindowUserPointer(this->w, pointer);
+}
+
 void Window::close()
 {
     glfwSetWindowShouldClose(this->w, GLFW_TRUE);

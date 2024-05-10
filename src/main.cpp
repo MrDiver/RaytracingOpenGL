@@ -24,12 +24,6 @@ void error_callback(int32_t error, const char *description)
     spdlog::error(description);
 }
 
-static void key_callback(GLFWwindow *window, int32_t key, int32_t scancode, int32_t action, int32_t mods)
-{
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-}
-
 struct Vertex
 {
     glm::vec3 pos;
@@ -66,20 +60,16 @@ struct GlobalData
     std::vector<Sphere> spheres;
 };
 
-void something()
+static void key_callback(GLFWwindow *window, int32_t key, int32_t scancode, int32_t action, int32_t mods)
 {
-    float width = ImGui::CalcItemWidth();
-    ImDrawList *drawList = ImGui::GetWindowDrawList();
-    ImGui::InvisibleButton("SLIPSLOP", ImVec2(width, width));
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+}
 
-    ImRect oRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
-    ImVec2 vSecurity(15.0f, 15.0f);
-    ImRect frame_bb = ImRect(oRect.Min - vSecurity, oRect.Max + vSecurity);
-    bool held;
-    bool hovered;
-    bool pressed = ImGui::ButtonBehavior(frame_bb, ImGui::GetID("##Zone"), &hovered, &held);
-    ImU32 const uFrameCol = ImGui::GetColorU32(ImGuiCol_FrameBg);
-    ImGui::RenderFrame(oRect.Min, oRect.Max, uFrameCol, true, 5.0f);
+void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
+{
+    GlobalData *data = (GlobalData *)glfwGetWindowUserPointer(window);
+    data->camera_z += yoffset;
 }
 
 int main()
@@ -93,6 +83,7 @@ int main()
 
     // Set callback
     window.setKeyCallback(key_callback);
+    window.setScrollCallback(scroll_callback);
 
     std::vector<Vertex> vertices = {
         Vertex(glm::vec3(1.0f, -1.0f, 0.0f), glm::vec2(1.0f, 1.0f)),  // top right
@@ -117,6 +108,7 @@ int main()
 
     // ImGui Variables
     GlobalData globaldata;
+    window.setUserPointer(&globaldata);
     double lastTime = glfwGetTime();
     std::vector<Sphere> spheres;
     spheres.push_back(Sphere(glm::vec3(0, 0, 0), 0.5, glm::vec3(1, 0, 0)));
