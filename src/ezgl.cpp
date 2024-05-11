@@ -1,9 +1,11 @@
 #include "ezgl.hpp"
+#include <GL/gl.h>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
+#include <spdlog/spdlog.h>
 #include <string>
-#include <string_view>
 
 namespace fs = std::filesystem;
 
@@ -30,6 +32,36 @@ GLint getGLTypeSize(GLenum type)
     }
     spdlog::error("Could not find size of type {} for GL Types", type);
     exit(EXIT_FAILURE);
+}
+
+void checkError()
+{
+    switch (glGetError())
+    {
+    case GL_NO_ERROR:
+        break;
+    case GL_INVALID_ENUM:
+        spdlog::error("Invalid Enum");
+        break;
+    case GL_INVALID_VALUE:
+        spdlog::error("Invalid Value");
+        break;
+    case GL_INVALID_OPERATION:
+        spdlog::error("Invalid Operation");
+        break;
+    case GL_INVALID_FRAMEBUFFER_OPERATION:
+        spdlog::error("Invalid Framebuffer Operation");
+        break;
+    case GL_OUT_OF_MEMORY:
+        spdlog::error("Out of Memory");
+        break;
+    case GL_STACK_UNDERFLOW:
+        spdlog::error("Stack Underflow");
+        break;
+    case GL_STACK_OVERFLOW:
+        spdlog::error("Stack Overflow");
+        break;
+    }
 }
 
 /* VertexBuffer */
@@ -93,7 +125,7 @@ void VertexArray::attributes(std::initializer_list<std::pair<GLenum, GLint>> ele
 
 /* Program */
 
-std::string read_file(std::string_view path)
+std::string readFile(std::string_view path, std::vector<std::string> &includes)
 {
     spdlog::debug("Reading file {}", path.data());
     std::ifstream stream(path.data());
@@ -106,6 +138,7 @@ std::string read_file(std::string_view path)
     }
 
     fs::path p(path);
+    includes.push_back(p.filename());
     p = p.remove_filename();
 
     std::string content;
@@ -120,7 +153,7 @@ std::string read_file(std::string_view path)
                 size_t end = line.find("\"", start + 1);
                 std::string sub(line.begin() + start + 1, line.begin() + end);
                 spdlog::debug("Found include with name {} attempting read", p.string() + sub);
-                std::string subfile = read_file(p.string() + sub);
+                std::string subfile = readFile(p.string() + sub, includes);
                 content += "// === START INCLUDE " + sub + " ===\n";
                 content += subfile;
                 content += "// === END INCLUDE " + sub + " ===\n";
@@ -141,10 +174,35 @@ std::string read_file(std::string_view path)
     return content;
 }
 
-Program::Program(std::string const &vertexPath, std::string const &fragmentPath)
+Program::Program(std::string const &vertexPath, std::string const &fragmentPath, bool autoreload)
+    : autoreload(autoreload), vertexPath(vertexPath), fragmentPath(fragmentPath)
 {
-    std::string vertexSource = read_file(vertexPath);
-    std::string fragmentSource = read_file(fragmentPath);
+    this->compile();
+    if (autoreload)
+    {
+        this->watcher.addWatch("shaders/", this, false);
+        this->watcher.watch();
+    }
+}
+
+Program::~Program()
+{
+    glDeleteProgram(this->id);
+}
+
+void Program::compile()
+{
+    needsRecompile = false;
+    includedFiles.clear();
+
+    std::string vertexSource = readFile(this->vertexPath, this->includedFiles);
+    std::string fragmentSource = readFile(this->fragmentPath, this->includedFiles);
+    /* spdlog::info("{}", vertexSource); */
+    /* spdlog::info("{}", fragmentSource); */
+    for (auto const &e : this->includedFiles)
+    {
+        spdlog::debug("Includes {}", e);
+    }
     GLint vertShader, fragShader;
     vertShader = glCreateShader(GL_VERTEX_SHADER);
     fragShader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -161,7 +219,7 @@ Program::Program(std::string const &vertexPath, std::string const &fragmentPath)
     {
         glGetShaderInfoLog(vertShader, 512, NULL, infoLog);
         spdlog::error("VertexShader compilation failed \n{}", infoLog);
-        exit(EXIT_FAILURE);
+        return;
     }
 
     tmp = fragmentSource.c_str();
@@ -173,10 +231,22 @@ Program::Program(std::string const &vertexPath, std::string const &fragmentPath)
     {
         glGetShaderInfoLog(fragShader, 512, NULL, infoLog);
         spdlog::error("FragmentShader compilation failed \n{}", infoLog);
+        return;
+    }
+
+    if (this->id)
+    {
+        glUseProgram(0);
+        glDeleteProgram(this->id);
+    }
+    this->id = glCreateProgram();
+    if (this->id == 0)
+    {
+        auto e = glGetError();
+        spdlog::error("glCreateProgram returned zero {}", e);
         exit(EXIT_FAILURE);
     }
 
-    this->id = glCreateProgram();
     glAttachShader(this->id, vertShader);
     glAttachShader(this->id, fragShader);
     glLinkProgram(this->id);
@@ -186,19 +256,23 @@ Program::Program(std::string const &vertexPath, std::string const &fragmentPath)
     {
         glGetProgramInfoLog(this->id, 512, NULL, infoLog);
         spdlog::error("Linking Program failed \n{}", infoLog);
-        exit(EXIT_FAILURE);
     }
     glDeleteShader(vertShader);
     glDeleteShader(fragShader);
+    spdlog::info("Recompiled shaders");
 }
 
-Program::~Program()
+void Program::recompile()
 {
-    glDeleteProgram(this->id);
+    this->needsRecompile = true;
 }
 
 void Program::use()
 {
+    if (needsRecompile)
+    {
+        this->compile();
+    }
     glUseProgram(this->id);
 }
 
@@ -233,6 +307,20 @@ void Program::setVec4(std::string const &name, glm::vec4 const &value)
 void Program::setVec4(std::string const &name, float v1, float v2, float v3, float v4)
 {
     glUniform4f(glGetUniformLocation(this->id, name.c_str()), v1, v2, v3, v4);
+}
+
+void Program::handleFileAction(efsw::WatchID watchid, const std::string &dir, const std::string &filename,
+                               efsw::Action action, std::string oldFilename)
+{
+    for (auto const &s : includedFiles)
+    {
+        if (s.compare(filename) == 0 && action == efsw::Actions::Add)
+        {
+            spdlog::debug("Needs Recompile {}", filename);
+            this->needsRecompile = true;
+            return;
+        }
+    }
 }
 
 SSBO::SSBO()

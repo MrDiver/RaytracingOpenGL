@@ -7,16 +7,12 @@ project("ray")
 # CONFIG FOR CPP 20
 set(CMAKE_CXX_STANDARD 20)
 
-set(SOURCE_FILES
-    "src/main.cpp"
-    "src/window.cpp"
-    "src/ezgl.cpp"
-)
+set(SOURCE_FILES "src/main.cpp" "src/window.cpp" "src/ezgl.cpp")
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
-
+target_include_directories(${PROJECT_NAME}
+                           PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 # LINK GLFW
 set(GLFW_LIBRARY_TYPE "SHARED")
@@ -47,19 +43,25 @@ set(IMGUI_API "opengl3")
 file(GLOB IMGUI_SOURCES "external/imgui/*.cpp")
 file(GLOB IMGUI_HEADERS "external/imgui/*.h")
 message(${IMGUI_SOURCES})
-add_library(imgui STATIC ${IMGUI_SOURCES} ${IMGUI_HEADERS}
-    "external/imgui/backends/imgui_impl_${IMGUI_BACKEND}.cpp"
-    "external/imgui/backends/imgui_impl_${IMGUI_BACKEND}.h"
-    "external/imgui/backends/imgui_impl_${IMGUI_API}.cpp"
-    "external/imgui/backends/imgui_impl_${IMGUI_API}.h"
-)
+add_library(
+  imgui STATIC
+  ${IMGUI_SOURCES}
+  ${IMGUI_HEADERS}
+  "external/imgui/backends/imgui_impl_${IMGUI_BACKEND}.cpp"
+  "external/imgui/backends/imgui_impl_${IMGUI_BACKEND}.h"
+  "external/imgui/backends/imgui_impl_${IMGUI_API}.cpp"
+  "external/imgui/backends/imgui_impl_${IMGUI_API}.h")
 target_include_directories(imgui PRIVATE "external/imgui")
 target_link_libraries(${PROJECT_NAME} imgui)
-#target_sources(${PROJECT_NAME} PRIVATE ${IMGUI_SOURCES} ${IMGUI_HEADERS})
+# target_sources(${PROJECT_NAME} PRIVATE ${IMGUI_SOURCES} ${IMGUI_HEADERS})
 target_include_directories(${PROJECT_NAME} PRIVATE "external/imgui")
-
 
 # LINK GLM
 add_subdirectory("external/glm")
 target_link_libraries(${PROJECT_NAME} glm)
 target_include_directories(${PROJECT_NAME} PRIVATE glm)
+
+# LINK EFSW
+add_subdirectory("external/efsw")
+target_link_libraries(${PROJECT_NAME} efsw)
+target_include_directories(${PROJECT_NAME} PRIVATE efsw)

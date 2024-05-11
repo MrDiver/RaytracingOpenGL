@@ -1,11 +1,11 @@
 #pragma once
-#include "spdlog/spdlog.h"
 #include <cstddef>
 #include <cstdlib>
 #include <initializer_list>
-#include <string_view>
+#include <string>
 #include <utility>
 #define GLAD_GL_IMPLEMENTATION
+#include <efsw/efsw.hpp>
 #include <gl.h>
 #include <glm/glm.hpp>
 
@@ -13,6 +13,7 @@ namespace ez
 {
 
 GLint getGLTypeSize(GLenum type);
+void checkError();
 
 class VertexBuffer
 {
@@ -47,15 +48,23 @@ class VertexArray
     void attributes(std::initializer_list<std::pair<GLenum, GLint>> elements);
 };
 
-class Program
+class Program : public efsw::FileWatchListener
 {
   private:
     GLint id;
+    efsw::FileWatcher watcher;
+    bool autoreload;
+    std::string vertexPath;
+    std::string fragmentPath;
+    std::vector<std::string> includedFiles;
+    bool needsRecompile = false;
+    void compile();
 
   public:
-    Program(std::string const &vertex_path, std::string const &fragment_path);
+    Program(std::string const &vertex_path, std::string const &fragment_path, bool autoreload = false);
     ~Program();
 
+    void recompile();
     void use();
     void setInt(std::string const &name, uint32_t value);
     void setFloat(std::string const &name, float value);
@@ -65,6 +74,10 @@ class Program
     void setVec3(std::string const &name, float v1, float v2, float v3);
     void setVec4(std::string const &name, glm::vec4 const &value);
     void setVec4(std::string const &name, float v1, float v2, float v3, float v4);
+
+    // FileWatchListener
+    void handleFileAction(efsw::WatchID watchid, const std::string &dir, const std::string &filename,
+                          efsw::Action action, std::string oldFilename) override;
 };
 
 class SSBO

@@ -1,3 +1,7 @@
+#define FLT_MAX 3.402823466e+38
+#define FLT_MIN 1.175494351e-38
+#define DBL_MAX 1.7976931348623158e+308
+#define DBL_MIN 2.2250738585072014e-308
 
 uniform float t_min = 0.1;
 uniform float t_max = 100.0;
@@ -72,4 +76,20 @@ bool hitSphere(Sphere sphere, Ray ray, inout HitInfo hitinfo)
 
 bool hit(Sphere sphere, Ray ray, inout HitInfo hitinfo){
     return hitSphere(sphere,ray,hitinfo);
+}
+
+struct Interval{
+    float min;
+    float max;
+};
+
+const Interval Universe = Interval(FLT_MIN, FLT_MAX);
+const Interval Empty = Interval(FLT_MAX, FLT_MIN);
+
+bool intervalContains(Interval interval, float x){
+    return interval.min <= x && x <= interval.max;
+}
+
+bool intervalSurrounds(Interval interval, float x){
+    return interval.min < x && x < interval.max;
 }

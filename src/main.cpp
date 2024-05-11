@@ -1,4 +1,5 @@
-#include "spdlog/common.h"
+#include <exception>
+#include <memory>
 #include <vector>
 #define GLAD_GL_IMPLEMENTATION
 #define GLFW_INCLUDE_NONE
@@ -6,6 +7,7 @@
 #include <cstdlib>
 #include <gl.h>
 #include <glm/glm.hpp>
+#include <iostream>
 #include <spdlog/spdlog.h>
 #include <window.hpp>
 
@@ -13,7 +15,6 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 #endif
 #include "imgui.h"
-#include "imgui_internal.h"
 
 #include "ezgl.hpp"
 
@@ -58,12 +59,27 @@ struct GlobalData
     float t_min = 0.1;
     float t_max = 100.0;
     std::vector<Sphere> spheres;
+    std::unique_ptr<ez::Program> program = NULL;
 };
 
 static void key_callback(GLFWwindow *window, int32_t key, int32_t scancode, int32_t action, int32_t mods)
 {
+    GlobalData *data = (GlobalData *)glfwGetWindowUserPointer(window);
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+    {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
+    }
+    if (key == GLFW_KEY_R && action == GLFW_PRESS)
+    {
+        try
+        {
+            data->program->recompile();
+        }
+        catch (std::exception e)
+        {
+            spdlog::error("Couldn't compile Shaders\n{}", e.what());
+        }
+    }
 }
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
@@ -104,10 +120,9 @@ int main()
         {GL_FLOAT, 2}
     });
 
-    ez::Program quad_program("shaders/quad.vsh", "shaders/quad.fsh");
-
     // ImGui Variables
     GlobalData globaldata;
+    globaldata.program = std::make_unique<ez::Program>("shaders/quad.vsh", "shaders/quad.fsh", true);
     window.setUserPointer(&globaldata);
     double lastTime = glfwGetTime();
     std::vector<Sphere> spheres;
@@ -125,15 +140,15 @@ int main()
         // START RENDERING
         window.startDrawing();
 
-        quad_program.use();
-        quad_program.setFloat("window_width", window.width);
-        quad_program.setFloat("window_height", window.height);
-        quad_program.setFloat("viewport_height", globaldata.viewport_size);
-        quad_program.setFloat("focal_length", globaldata.focal_length);
-        quad_program.setFloat("camera_z", globaldata.camera_z);
-        quad_program.setFloat("t_min", globaldata.t_min);
-        quad_program.setFloat("t_max", globaldata.t_max);
-        quad_program.setInt("numSpheres", spheres.size());
+        globaldata.program.get()->use();
+        globaldata.program.get()->setFloat("window_width", window.width);
+        globaldata.program.get()->setFloat("window_height", window.height);
+        globaldata.program.get()->setFloat("viewport_height", globaldata.viewport_size);
+        globaldata.program.get()->setFloat("focal_length", globaldata.focal_length);
+        globaldata.program.get()->setFloat("camera_z", globaldata.camera_z);
+        globaldata.program.get()->setFloat("t_min", globaldata.t_min);
+        globaldata.program.get()->setInt("numSpheres", spheres.size());
+        globaldata.program.get()->setFloat("t_max", globaldata.t_max);
 
         sphereSSBO.bind();
         sphereSSBO.layout(3);
@@ -180,6 +195,7 @@ int main()
         ImGui::End();
 
         window.endDrawing();
+
         // END RENDERING
     }
 
