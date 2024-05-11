@@ -58,6 +58,7 @@ struct GlobalData
     float camera_z = 17.0;
     float t_min = 0.1;
     float t_max = 100.0;
+    int max_ray_reflections = 3;
     std::vector<Sphere> spheres;
     std::unique_ptr<ez::Program> program = NULL;
 };
@@ -126,8 +127,8 @@ int main()
     window.setUserPointer(&globaldata);
     double lastTime = glfwGetTime();
     std::vector<Sphere> spheres;
-    spheres.push_back(Sphere(glm::vec3(0, 0, 0), 0.5, glm::vec3(1, 0, 0)));
-    spheres.push_back(Sphere(glm::vec3(-2, 0, 0), 0.3, glm::vec3(0, 1, 0)));
+    spheres.push_back(Sphere(glm::vec3(0, -0.2, 5), 1.0, glm::vec3(1, 0, 0)));
+    spheres.push_back(Sphere(glm::vec3(0, -51, 0), 50, glm::vec3(0, 1, 0)));
     spheres.push_back(Sphere(glm::vec3(2, 0, 0), 0.3, glm::vec3(0, 0, 1)));
     ez::SSBO sphereSSBO;
     sphereSSBO.setData(spheres.data(), spheres.size());
@@ -148,7 +149,10 @@ int main()
         globaldata.program.get()->setFloat("camera_z", globaldata.camera_z);
         globaldata.program.get()->setFloat("t_min", globaldata.t_min);
         globaldata.program.get()->setInt("numSpheres", spheres.size());
+        globaldata.program.get()->setInt("max_ray_reflections", globaldata.max_ray_reflections);
         globaldata.program.get()->setFloat("t_max", globaldata.t_max);
+        globaldata.program.get()->setFloat("frameTime", glfwGetTime() - lastTime);
+        globaldata.program.get()->setFloat("globalTime", glfwGetTime());
 
         sphereSSBO.bind();
         sphereSSBO.layout(3);
@@ -164,6 +168,7 @@ int main()
         ImGui::SliderFloat("Camera Z", &globaldata.camera_z, 0.0, 50.0);
         ImGui::SliderFloat("Min Clip", &globaldata.t_min, 0.0, 10.0);
         ImGui::SliderFloat("Max Clip", &globaldata.t_max, 10.0, 100.0);
+        ImGui::SliderInt("Max Reflections", &globaldata.max_ray_reflections, 1, 100);
         if (ImGui::Button("Add Sphere", ImVec2(30, 30)))
         {
             spheres.push_back(Sphere(glm::vec3(0, 0, 0), 1.0));
@@ -181,7 +186,7 @@ int main()
             ImGui::SameLine();
             if (ImGui::CollapsingHeader("Sphere"))
             {
-                bool positionUpdated = ImGui::SliderFloat3("Position", &spheres[i].origin.x, -2, 2);
+                bool positionUpdated = ImGui::SliderFloat3("Position", &spheres[i].origin.x, -5, 5);
                 bool radiusUpdated = ImGui::SliderFloat("Radius", &spheres[i].radius, -2, 2);
                 bool colorUpdated = ImGui::ColorPicker3("Color", &spheres[i].color.x);
                 if (positionUpdated || colorUpdated || radiusUpdated)

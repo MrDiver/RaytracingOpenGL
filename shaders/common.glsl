@@ -5,17 +5,23 @@
 
 uniform float t_min = 0.1;
 uniform float t_max = 100.0;
+uniform float frameTime = 0;
+uniform float globalTime = 0;
+
+float random (vec2 st) {
+    return fract(sin(dot(st.xy,
+                         vec2(12.9898,78.233)))*
+        43758.5453123);
+}
 
 struct Ray{
     vec3 origin;
     vec3 direction;
 };
 
-struct Sphere{
-    vec3 origin;
-    vec3 color;
-    float radius;
-};
+vec3 rayAt(const Ray r, float t){
+    return r.origin + r.direction * t;
+}
 
 struct HitInfo{
     vec3 pos;
@@ -24,16 +30,34 @@ struct HitInfo{
     float t;
 };
 
-vec3 rayAt(const Ray r, float t){
-    return r.origin + r.direction * t;
+struct Interval{
+    float min;
+    float max;
+};
+
+const Interval Universe = Interval(FLT_MIN, FLT_MAX);
+const Interval Empty = Interval(FLT_MAX, FLT_MIN);
+
+bool intervalContains(Interval interval, float x){
+    return interval.min <= x && x <= interval.max;
 }
+
+bool intervalSurrounds(Interval interval, float x){
+    return interval.min < x && x < interval.max;
+}
+
+struct Sphere{
+    vec3 origin;
+    vec3 color;
+    float radius;
+};
 
 vec3 sphereNormal(Sphere sphere, float t, Ray ray)
 {
     return (rayAt(ray, t) - sphere.origin)/sphere.radius;
 }
 
-bool hitSphere(Sphere sphere, Ray ray, inout HitInfo hitinfo)
+bool hitSphere(Sphere sphere, Ray ray, Interval interval, inout HitInfo hitinfo)
 {
     vec3 center = sphere.origin;
     float radius = sphere.radius;
@@ -53,9 +77,9 @@ bool hitSphere(Sphere sphere, Ray ray, inout HitInfo hitinfo)
 
     float root = sqrt(discriminant);
     float t = doc - root;
-    if(t <= t_min || t>= t_max){
+    if(!intervalSurrounds(interval, t)){
         t = doc + root;
-        if(t <= t_min || t>= t_max){
+        if(!intervalSurrounds(interval, t)){
             return false;
         }
         hitinfo.t = t;
@@ -74,22 +98,6 @@ bool hitSphere(Sphere sphere, Ray ray, inout HitInfo hitinfo)
 }
 
 
-bool hit(Sphere sphere, Ray ray, inout HitInfo hitinfo){
-    return hitSphere(sphere,ray,hitinfo);
-}
-
-struct Interval{
-    float min;
-    float max;
-};
-
-const Interval Universe = Interval(FLT_MIN, FLT_MAX);
-const Interval Empty = Interval(FLT_MAX, FLT_MIN);
-
-bool intervalContains(Interval interval, float x){
-    return interval.min <= x && x <= interval.max;
-}
-
-bool intervalSurrounds(Interval interval, float x){
-    return interval.min < x && x < interval.max;
+bool hit(Sphere sphere, Ray ray, Interval interval, inout HitInfo hitinfo){
+    return hitSphere(sphere,ray, interval ,hitinfo);
 }
