@@ -59,6 +59,7 @@ struct GlobalData
     float t_min = 0.1;
     float t_max = 100.0;
     int max_ray_reflections = 3;
+    int samples = 1;
     std::vector<Sphere> spheres;
     std::unique_ptr<ez::Program> program = NULL;
 };
@@ -150,6 +151,7 @@ int main()
         globaldata.program.get()->setFloat("t_min", globaldata.t_min);
         globaldata.program.get()->setInt("numSpheres", spheres.size());
         globaldata.program.get()->setInt("max_ray_reflections", globaldata.max_ray_reflections);
+        globaldata.program.get()->setInt("samples", globaldata.samples);
         globaldata.program.get()->setFloat("t_max", globaldata.t_max);
         globaldata.program.get()->setFloat("frameTime", glfwGetTime() - lastTime);
         globaldata.program.get()->setFloat("globalTime", glfwGetTime());
@@ -169,6 +171,7 @@ int main()
         ImGui::SliderFloat("Min Clip", &globaldata.t_min, 0.0, 10.0);
         ImGui::SliderFloat("Max Clip", &globaldata.t_max, 10.0, 100.0);
         ImGui::SliderInt("Max Reflections", &globaldata.max_ray_reflections, 1, 100);
+        ImGui::SliderInt("Max Samples", &globaldata.samples, 1, 100);
         if (ImGui::Button("Add Sphere", ImVec2(30, 30)))
         {
             spheres.push_back(Sphere(glm::vec3(0, 0, 0), 1.0));

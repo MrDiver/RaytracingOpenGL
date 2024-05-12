@@ -25,15 +25,16 @@ vec3 pixel_size = vec3(1/window_width, 1/window_height, 0);
 
 uniform int numSpheres = 0;
 uniform int max_ray_reflections = 10;
+uniform int samples = 1;
 
 int _r = 0;
 float random_float(){
     _r++;
-    return random(vec2(f_uv + frameTime + _r));
+    return random(vec2(f_uv) + _r);
 }
 
 float random_minmax(float min, float max){
-    return random_float()*(max-min)-min;
+    return random_float()*(max-min)+min;
 }
 
 vec3 random_vec3(float min, float max){
@@ -72,13 +73,16 @@ void getWorldHit(const Ray ray, inout HitInfo hitinfo, inout int index){
     index = lastIndex;
 }
 
+HitInfo hitinfo;
+vec3 colorAcc;
+float factor;
+Ray ray;
+
 vec3 rayColor(Ray iray)
 {
-    HitInfo hitinfo;
-    vec3 colorAcc = vec3(1);
-    float factor = 1.0;
-    Ray ray = iray;
-
+    colorAcc = vec3(1);
+    factor = 1.0;
+    ray = iray;
     for(int step = 0; step < max_ray_reflections; step++){
         float lastDistance = t_max;
         int sphereIdx = -1;
@@ -104,7 +108,6 @@ vec3 rayColor(Ray iray)
 
 void main()
 {
-    int samples = 1;
     vec3 accumulatedColor = vec3(0);
 
     for(int i = 0; i < samples; i++){
@@ -118,5 +121,6 @@ void main()
     }
 
     FragColor = vec4(accumulatedColor, 1.0);
-    // FragColor = vec4(f_uv.xy, 0.0, 1.0);
+    // FragColor = vec4(vec3(random_float()), 1.0);
+    // FragColor = vec4(random_vec3(-1.0, 1.0), 1.0);
 }
